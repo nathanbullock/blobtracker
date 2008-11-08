@@ -1,0 +1,101 @@
+Keeping my Digital Photos Safe
+
+Over the past ten years I have been slowly building up more and more digital
+pictures on my computer. At first I just backed them up onto Zip disks, this
+worked for the most part except that it was hard to keep track of which backup
+was the most recent copy and I was always worried that a backup would become
+corrupted. Next I started using source control tools (Subversion and then git)
+to keep copies of my pictures on multiple computers. This worked very well, it
+made it simple to add or modify pictures on any of my computers and then sync
+the rest of the computers so that they all had the most recent versions of the
+pictures. The other advantage of these source control tools is that they
+verified the integrity of the files so that I would learn as soon as possible
+if one of the hard drives had ended up corrupting the pictures (I suppose I am
+paranoid about harddrives). Now the problem is that my repository of pictures
+is closing in on the 10 Gigabytes and these source control tools are slowing
+down to an unacceptable level. So what now?
+
+Here is what I need:
+
+- the photos must be locally stored on the computer so that I can access them
+  wherever I am.
+- the photos must be on two or more computers. (Our family has two laptops and
+  a desktop computer).
+- people need to be able to add or remove pictures on any of the computers.
+- people need to be able to edit pictures on any of the computers.
+- the various computers need to be able to sync with each other such that any
+  additions will be visible on both computers after the sync, any removals will
+  be removed from both computers after the sync, and any modifications will be
+  affected on both computers after the sync. (I realize that in some situations
+  these steps can create conflicts, those conflicts should be able to be
+  resolved manually.)
+- the solution must scale, whatever that means.
+
+So what I really want is something with performance abilities closer to what
+rsync would give me but with the advanced tracking abilities of something like
+git. This gave me the idea for BlobTracker.
+
+The concept is simple: have git store the directory structure, this way it will
+be able to track when a file was removed, added, or modified, and have rsync
+move the large volumes of data. So what I ended up with is that a BlobTracker
+repository has two special directories at the root ".bt_objects" that has all
+the actual data (photos in this case) and ".bt_layout" has the actual layout of
+the files and their names (including the directory structure).
+
+For example assume that I had a photo album directory that looked like:
+
+photos/2007/pic1.jpg  -> sha1 hash code  xxxxxx1
+photos/2007/pic2.jpg  -> sha1 hash code  xxxxxx2
+photos/2007/pic3.jpg  -> sha1 hash code  xxxxxx3
+photos/2008/pic1.jpg  -> sha1 hash code  xxxxxx4
+photos/2008/pic2.jpg  -> sha1 hash code  xxxxxx5
+
+Under BlobTracker it would look like:
+
+.bt_objects/xxxxxx1  -> this is actually pic1.jpg
+.bt_objects/xxxxxx2  -> this is actually pic2.jpg
+.bt_objects/xxxxxx3  -> etc
+.bt_objects/xxxxxx4  -> etc
+.bt_objects/xxxxxx5  -> etc
+.bt_layout/photos/2007/pic1.jpg  -> text file with the value xxxxxx1
+.bt_layout/photos/2007/pic2.jpg  -> text file with the value xxxxxx2
+.bt_layout/photos/2007/pic3.jpg  -> text file with the value xxxxxx3
+.bt_layout/photos/2008/pic1.jpg  -> text file with the value xxxxxx4
+.bt_layout/photos/2008/pic2.jpg  -> text file with the value xxxxxx5
+photos/2007/pic1.jpg  -> sha1 hash code  xxxxxx1
+photos/2007/pic2.jpg  -> sha1 hash code  xxxxxx2
+photos/2007/pic3.jpg  -> sha1 hash code  xxxxxx3
+photos/2008/pic1.jpg  -> sha1 hash code  xxxxxx4
+photos/2008/pic2.jpg  -> sha1 hash code  xxxxxx5
+
+Now we can use git to manage the .bt_layout directory and deal with all the
+fancy merge problems of two disconnected people changing things at the same
+time, and rsync can make sure that everyone has all the actual data and that we
+can move this data from computer to computer in a relatively efficient manner.
+
+
+bt-commit
+- takes the current physical directory structure and adds any new objects into
+  the .bt_objects directory and updates the .bt_layout to represent the current
+  physical directory structure pointing to the correct objects. It also kicks
+  off git commit for you.
+
+bt-reset
+- updates the current physical directory to match the .bt_layout
+  representation.
+
+bt-fsck
+- verify that the .bt_layout is up-to-date with the physical layout, and
+  vice-versa. It also verifies that all the objects in the .bt_objects
+  directory are valid.
+
+
+Workflow for making changes:
+- make changes to photos. Adding, removing, and modifying.
+- bt-commit
+
+Workflow for syncing with another repository.
+- use rsync to pull any new objects into your .bt_objects directory
+- use git pull to pull any layout changes into your .bt_layout directory
+- use bt-reset to match your repository to the current view in .bt_layout
+

@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# rsync --size-only --progress
+# git pull
+
+handle_dir() {
+    for x in $1/*; do
+        if [ -d $x ]; then
+            mkdir ../$x 2>/dev/null
+            handle_dir $x
+        else
+            SHA1=`cat $x`
+            cp ../.bt_objects/$SHA1 ../$x
+            touch -d "`/bin/ls -lGg --full-time $x | cut -d " " -f 4-5`" ../$x
+        fi
+    done
+}
+
+# check that this is a valid directory
+if [ ! -d .bt_objects ]; then
+    echo "This is not a BlobTracker repository."
+    exit 1
+fi
+
+cd .bt_layout
+handle_dir .
+

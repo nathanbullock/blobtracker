@@ -1,0 +1,60 @@
+#!/bin/bash
+
+ERR=0
+
+check_layout() {
+    for x in $1/*; do
+        if [ -d $x ]; then
+            check_layout $x
+        else
+            SHA1=`cat $x`
+            if [ ! -f ../.bt_objects/$SHA1 ]; then
+                echo "bad      $x"
+                ERR=1
+            fi
+            if [ ! -f ../$x ]; then   echo "deleted  $x"; ERR=1; continue; fi
+            if [ ../$x -nt $x ]; then echo "modified $x"; ERR=1; fi
+            if [ ../$x -ot $x ]; then echo "stale    $x"; ERR=1; fi
+        fi
+    done
+}
+
+check_physical() {
+    for x in $1/*; do
+        if [ -d $x ]; then
+            check_physical $x
+        else
+            if [ ! -f .bt_layout/$x ]; then   echo "added    $x"; ERR=1; fi
+        fi
+    done
+}
+
+check_objects() {
+    for x in .bt_objects/*; do
+        SHA1=`sha1sum $x | cut -f 1 -d " "`
+        if [ $x != ".bt_objects/$SHA1" ]; then
+            echo "bad  $x"
+            ERR=1
+        fi
+    done
+}
+
+# are we even in a BlobTracker directory
+if [ ! -d .bt_objects ]; then
+    echo "This is not a BlobTracker repository."
+    exit 1
+fi
+
+# check for modified or deleted files
+cd .bt_layout
+check_layout .
+cd ..
+
+# check for added files
+check_physical .
+
+# check that all the objects match their own sha1
+check_objects
+
+exit $ERR
+

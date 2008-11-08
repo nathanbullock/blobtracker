@@ -1,0 +1,57 @@
+#!/bin/bash
+
+recursively_add() {
+    for x in $1/*; do
+        if [ -d $x ]; then
+            mkdir .bt_layout/$x 2>/dev/null
+            recursively_add $x
+        else
+            if [ ! $x -nt .bt_layout/$x ]; then
+                continue;
+            fi
+            SHA1=`sha1sum $x | cut -f 1 -d " "`
+            echo $SHA1 > .bt_layout/$x
+            touch -d "`/bin/ls -lGg --full-time $x | cut -d " " -f 4-5`" \
+                .bt_layout/$x
+            if [ ! -f .bt_objects/$SHA1 ]; then
+                echo "new file   $x"
+                cp $x .bt_objects/$SHA1
+            fi
+        fi
+    done
+}
+
+recursively_remove() {
+    for x in $1/*; do
+        if [ -d $x ]; then
+            recursively_remove $x
+        else
+            if [ -f ../$x ]; then
+                continue;
+            fi
+            git rm $x
+        fi
+    done
+}
+
+# determine if we should even be looking at this directory
+if [ ! -d .bt_objects ]; then
+    echo "This is not a BlobTracker repository."
+    exit 1
+fi
+
+# create the .bt_layout directory, ignore errors if it already exists
+mkdir .bt_layout 2>/dev/null
+
+# recursively add new or modified files to the layout
+recursively_add .
+
+# recursively remove items from the layout as needed
+cd .bt_layout
+git add *
+recursively_remove .
+
+# commit the changes
+git commit
+cd ..
+
