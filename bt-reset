@@ -5,6 +5,7 @@
 
 handle_dir() {
     for x in $1/*; do
+        if [ $x == "$1/*" ]; then continue; fi
         if [ -d $x ]; then
             mkdir ../$x 2>/dev/null
             handle_dir $x

@@ -2,6 +2,7 @@
 
 recursively_add() {
     for x in $1/*; do
+        if [ $x == "$1/*" ]; then continue; fi
         if [ -d $x ]; then
             if [ ! -d .bt_layout/$x ]; then
                 mkdir .bt_layout/$x
@@ -25,6 +26,7 @@ recursively_add() {
 
 recursively_remove() {
     for x in $1/*; do
+        if [ $x == "$1/*" ]; then continue; fi
         if [ -d $x ]; then
             recursively_remove $x
         else

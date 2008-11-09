@@ -4,6 +4,7 @@ ERR=0
 
 check_layout() {
     for x in $1/*; do
+        if [ $x == "$1/*" ]; then continue; fi
         if [ -d $x ]; then
             check_layout $x
         else
@@ -21,6 +22,7 @@ check_layout() {
 
 check_physical() {
     for x in $1/*; do
+        if [ $x == "$1/*" ]; then continue; fi
         if [ -d $x ]; then
             check_physical $x
         else
@@ -31,6 +33,7 @@ check_physical() {
 
 check_objects() {
     for x in .bt_objects/*; do
+        if [ $x == ".bt_objects/*" ]; then continue; fi
         SHA1=`sha1sum $x | cut -f 1 -d " "`
         if [ $x != ".bt_objects/$SHA1" ]; then
             echo "bad  $x"
