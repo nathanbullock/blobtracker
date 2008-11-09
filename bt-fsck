@@ -7,7 +7,7 @@ check_layout() {
         if [ -d $x ]; then
             check_layout $x
         else
-            SHA1=`cat $x`
+            read SHA1 < $x # this is much faster than using SHA1=`cat $x`
             if [ ! -f ../.bt_objects/$SHA1 ]; then
                 echo "bad      $x"
                 ERR=1

@@ -9,9 +9,16 @@ handle_dir() {
             mkdir ../$x 2>/dev/null
             handle_dir $x
         else
-            SHA1=`cat $x`
-            cp ../.bt_objects/$SHA1 ../$x
-            touch -d "`/bin/ls -lGg --full-time $x | cut -d " " -f 4-5`" ../$x
+            if [ $x -nt ../$x ]; then
+                echo "updating  $x"
+                SHA1=`cat $x`
+                cp ../.bt_objects/$SHA1 ../$x
+                DATE="`/bin/ls -lGg --full-time $x | cut -d " " -f 4-5`"
+                touch -d "$DATE" ../$x
+            fi
+            if [ $x -ot ../$x ]; then
+                echo "modified? $x"
+            fi
         fi
     done
 }

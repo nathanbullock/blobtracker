@@ -3,7 +3,9 @@
 recursively_add() {
     for x in $1/*; do
         if [ -d $x ]; then
-            mkdir .bt_layout/$x 2>/dev/null
+            if [ ! -d .bt_layout/$x ]; then
+                mkdir .bt_layout/$x
+            fi
             recursively_add $x
         else
             if [ ! $x -nt .bt_layout/$x ]; then
@@ -40,8 +42,10 @@ if [ ! -d .bt_objects ]; then
     exit 1
 fi
 
-# create the .bt_layout directory, ignore errors if it already exists
-mkdir .bt_layout 2>/dev/null
+# create the .bt_layout directory, if it doesn't already exist
+if [ ! -d .bt_layout ]; then
+    mkdir .bt_layout
+fi
 
 # recursively add new or modified files to the layout
 recursively_add .
