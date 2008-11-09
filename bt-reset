@@ -3,6 +3,18 @@
 # rsync --size-only --progress
 # git pull
 
+# are we in a normal BlobTracker repository
+if [ -d .bt_objects -a -d .bt_layout ]; then
+    true
+# or a non-working directory BlobTracker repository
+elif [ -d bt_objects -a -d bt_layout ]; then
+    echo "You can't do a reset on non-working directory repositories."
+    exit 1
+else
+    echo "This is not a BlobTracker repository."
+    exit 1
+fi
+
 handle_dir() {
     for x in $1/*; do
         if [ $x == "$1/*" ]; then continue; fi
@@ -23,12 +35,6 @@ handle_dir() {
         fi
     done
 }
-
-# check that this is a valid directory
-if [ ! -d .bt_objects ]; then
-    echo "This is not a BlobTracker repository."
-    exit 1
-fi
 
 cd .bt_layout
 handle_dir .

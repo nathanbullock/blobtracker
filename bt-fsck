@@ -1,5 +1,20 @@
 #!/bin/bash
 
+# are we in a normal BlobTracker repository
+if [ -d .bt_objects -a -d .bt_layout ]; then
+    NORM=1
+    OBJ=.bt_objects
+    LAY=.bt_layout
+# or a non-working directory BlobTracker repository
+elif [ -d bt_objects -a -d bt_layout ]; then
+    NORM=""
+    OBJ=bt_objects
+    LAY=bt_layout
+else
+    echo "This is not a BlobTracker repository."
+    exit 1
+fi
+
 ERR=0
 
 check_layout() {
@@ -9,10 +24,11 @@ check_layout() {
             check_layout $x
         else
             read SHA1 < $x # this is much faster than using SHA1=`cat $x`
-            if [ ! -f ../.bt_objects/$SHA1 ]; then
+            if [ ! -f ../$OBJ/$SHA1 ]; then
                 echo "bad      $x"
                 ERR=1
             fi
+            if [ ! "$NORM" ]; then continue; fi
             if [ ! -f ../$x ]; then   echo "deleted  $x"; ERR=1; continue; fi
             if [ ../$x -nt $x ]; then echo "modified $x"; ERR=1; fi
             if [ ../$x -ot $x ]; then echo "stale    $x"; ERR=1; fi
@@ -26,38 +42,34 @@ check_physical() {
         if [ -d $x ]; then
             check_physical $x
         else
-            if [ ! -f .bt_layout/$x ]; then   echo "added    $x"; ERR=1; fi
+            if [ ! -f $LAY/$x ]; then   echo "added    $x"; ERR=1; fi
         fi
     done
 }
 
 check_objects() {
-    for x in .bt_objects/*; do
-        if [ $x == ".bt_objects/*" ]; then continue; fi
+    for x in $OBJ/*; do
+        if [ $x == "$OBJ/*" ]; then continue; fi
         SHA1=`sha1sum $x | cut -f 1 -d " "`
-        if [ $x != ".bt_objects/$SHA1" ]; then
+        if [ $x != "$OBJ/$SHA1" ]; then
             echo "bad  $x"
             ERR=1
         fi
     done
 }
 
-# are we even in a BlobTracker directory
-if [ ! -d .bt_objects ]; then
-    echo "This is not a BlobTracker repository."
-    exit 1
-fi
-
 # check for modified or deleted files
-cd .bt_layout
+cd $LAY
 check_layout .
 cd ..
 
 # check for added files
-check_physical .
+if [ "$NORM" ]; then
+    check_physical .
+fi
 
 # check that all the objects match their own sha1
-if [ "$1" == "--full" ]; then
+if [ "$1" == "--full" -o ! "$NORM" ]; then
     check_objects
 else
     echo "Not checking the object integrity, use --full."

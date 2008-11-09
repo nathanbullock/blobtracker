@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# are we in a normal BlobTracker repository
+if [ -d .bt_objects -a -d .bt_layout ]; then
+    true
+# or a non-working directory BlobTracker repository
+elif [ -d bt_objects -a -d bt_layout ]; then
+    echo "You can't do a commit on non-working directory repositories."
+    exit 1
+else
+    echo "This is not a BlobTracker repository."
+    exit 1
+fi
+
 recursively_add() {
     for x in $1/*; do
         if [ $x == "$1/*" ]; then continue; fi
@@ -37,17 +49,6 @@ recursively_remove() {
         fi
     done
 }
-
-# determine if we should even be looking at this directory
-if [ ! -d .bt_objects ]; then
-    echo "This is not a BlobTracker repository."
-    exit 1
-fi
-
-# create the .bt_layout directory, if it doesn't already exist
-if [ ! -d .bt_layout ]; then
-    mkdir .bt_layout
-fi
 
 # recursively add new or modified files to the layout
 recursively_add .
