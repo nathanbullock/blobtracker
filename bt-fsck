@@ -54,7 +54,11 @@ cd ..
 check_physical .
 
 # check that all the objects match their own sha1
-check_objects
+if [ "$1" == "--full" ]; then
+    check_objects
+else
+    echo "Not checking the object integrity, use --full."
+fi
 
 exit $ERR
 
