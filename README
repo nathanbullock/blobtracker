@@ -1,0 +1,31 @@
+Basic usage of BlobTracker
+
+Creating a BlobTracker repository:
+mkdir .bt_layout
+mkdir .bt_objects
+cd .bt_objects
+git init
+cd ..
+bt-commit
+
+Checking for changes:
+bt-fsck
+
+Commiting changes:
+bt-commit
+
+Cloning a repository:
+mkdir .bt_objects
+rsync --size-only --progress --stats <SOURCE>/.bt_objects/* ./.bt_objects
+git clone <SOURCE>/.bt_objects
+bt-reset
+
+Pulling updates from another repository:
+rsync --size-only --progress --stats <SOURCE>/.bt_objects/* ./.bt_objects
+cd .bt_objects
+git pull <SOURCE>
+cd ..
+bt-reset
+
+Verifying full integrity:
+bt-fsck --full
